@@ -1,0 +1,24 @@
+{
+	"js/point-of-sale.min.js": [
+		"public/js/stripe_v1.js",
+		"public/js/stripe_terminal.js",
+		"pos_assets/pos_item_selector.js",
+		"pos_assets/pos_item_cart.js",
+		"pos_assets/pos_item_details.js",
+		"custom_scripts/pos_scripts/pos_item_details.js",
+		"pos_assets/pos_number_pad.js",
+		"pos_assets/pos_payment.js",
+		"custom_scripts/pos_scripts/pos_payment.js",
+		"pos_assets/pos_past_order_list.js",
+		"pos_assets/pos_past_order_summary.js",
+		"custom_scripts/pos_scripts/pos_past_order_summary.js",
+		"pos_assets/pos_controller.js",
+		"custom_scripts/pos_scripts/pos_controller.js"
+	],
+	"js/pos-mettler-toledo.min.js": [
+		"custom_scripts/pos_scripts/pos_mettler_toledo.js"
+	],
+	"js/form-raw.min.js": [
+		"custom_scripts/frappe/form.js"
+	]
+}
