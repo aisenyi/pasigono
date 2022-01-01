@@ -14,7 +14,7 @@ app_license = "MIT"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/pasigono/css/pasigono.css"
-app_include_js = "/assets/js/form-raw.min.js"
+app_include_js = ["/assets/js/form-raw.min.js", "/assets/pasigono/js/stripe_v1.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/pasigono/css/pasigono.css"
