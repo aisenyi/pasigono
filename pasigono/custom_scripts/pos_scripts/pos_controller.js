@@ -8,11 +8,13 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 	}
 	
 	init_stripe_terminal(){
-		this.stripe = new erpnext.PointOfSale.StripeTerminal();
-		frappe.dom.freeze();
-		//this.stripe.connect_to_stripe_terminal(this, true);	
-		this.stripe.assign_stripe_connection_token(this, true);
-		frappe.dom.unfreeze();
+		//if(window.enable_stripe_terminal){
+			this.stripe = new erpnext.PointOfSale.StripeTerminal();
+			frappe.dom.freeze();
+			//this.stripe.connect_to_stripe_terminal(this, true);	
+			this.stripe.assign_stripe_connection_token(this, true);
+			frappe.dom.unfreeze();
+		//}
 	}
 	
 	init_order_summary() {
@@ -78,6 +80,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 
 		frappe.db.get_doc("POS Profile", this.pos_profile).then((profile) => {
 			window.enable_raw_print = profile.enable_raw_printing;
+			window.enable_stripe_terminal = false;
 			//Select raw printer
 			if(window.enable_raw_print == 1){
 				var d = new frappe.ui.Dialog({
@@ -285,58 +288,60 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 		let item_row = undefined;
 		try {
 			let { field, value, item } = args;
-			const { item_code, batch_no, serial_no, uom } = item;
-			item_row = this.get_item_from_frm(item_code, batch_no, uom);
+			item_row = this.get_item_from_frm(item);
+			const item_row_exists = !$.isEmptyObject(item_row);
 
-			const item_selected_from_selector = field === 'qty' && value === "+1"
+			const from_selector = field === 'qty' && value === "+1";
+			if (from_selector)
+				value = flt(item_row.qty) + flt(value);
 
-			if (item_row) {
-				item_selected_from_selector && (value = item_row.qty + flt(value))
-
-				field === 'qty' && (value = flt(value));
+			if (item_row_exists) {
+				if (field === 'qty')
+					value = flt(value);
 
 				if (['qty', 'conversion_factor'].includes(field) && value > 0 && !this.allow_negative_stock) {
 					const qty_needed = field === 'qty' ? value * item_row.conversion_factor : item_row.qty * value;
 					await this.check_stock_availability(item_row, qty_needed, this.frm.doc.set_warehouse);
 				}
 
-				if (this.is_current_item_being_edited(item_row) || item_selected_from_selector) {
+				if (this.is_current_item_being_edited(item_row) || from_selector) {
 					await frappe.model.set_value(item_row.doctype, item_row.name, field, value);
 					this.update_cart_html(item_row);
 				}
 
 			} else {
-				if (!this.frm.doc.customer) {
-					frappe.dom.unfreeze();
-					frappe.show_alert({
-						message: __('You must select a customer before adding an item.'),
-						indicator: 'orange'
-					});
-					frappe.utils.play_sound("error");
+				if (!this.frm.doc.customer)
+					return this.raise_customer_selection_alert();
+
+				const { item_code, batch_no, serial_no, rate } = item;
+
+				if (!item_code)
 					return;
-				}
-				if (!item_code) return;
 
-				item_selected_from_selector && (value = flt(value))
-
-				const args = { item_code, batch_no, [field]: value };
+				const new_item = { item_code, batch_no, rate, [field]: value };
 
 				if (serial_no) {
 					await this.check_serial_no_availablilty(item_code, this.frm.doc.set_warehouse, serial_no);
-					args['serial_no'] = serial_no;
+					new_item['serial_no'] = serial_no;
 				}
 
-				if (field === 'serial_no') args['qty'] = value.split(`\n`).length || 0;
+				if (field === 'serial_no')
+					new_item['qty'] = value.split(`\n`).length || 0;
 
-				item_row = this.frm.add_child('items', args);
+				item_row = this.frm.add_child('items', new_item);
 
 				if (field === 'qty' && value !== 0 && !this.allow_negative_stock)
 					await this.check_stock_availability(item_row, value, this.frm.doc.set_warehouse);
 
 				await this.trigger_new_item_events(item_row);
 
-				this.check_serial_batch_selection_needed(item_row) && this.edit_item_details_of(item_row);
 				this.update_cart_html(item_row);
+
+				if (this.item_details.$component.is(':visible'))
+					this.edit_item_details_of(item_row);
+
+				if (this.check_serial_batch_selection_needed(item_row))
+					this.edit_item_details_of(item_row);
 			}
 
 		} catch (error) {
