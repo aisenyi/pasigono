@@ -63,28 +63,27 @@ erpnext.PointOfSale.ItemDetails = class extends erpnext.PointOfSale.ItemDetails 
 	
 	toggle_item_details_section(item) {
 		window.is_item_details_open = true;
-		const { item_code, batch_no, uom } = this.current_item;
-		const item_code_is_same = item && item_code === item.item_code;
-		const batch_is_same = item && batch_no == item.batch_no;
-		const uom_is_same = item && uom === item.uom;
+		const current_item_changed = !this.compare_with_current_item(item);
 
-		this.item_has_changed = !item ? false : item_code_is_same && batch_is_same && uom_is_same ? false : true;
+		// if item is null or highlighted cart item is clicked twice
+		const hide_item_details = !Boolean(item) || !current_item_changed;
 
-		this.events.toggle_item_selector(this.item_has_changed);
-		this.toggle_component(this.item_has_changed);
+		this.events.toggle_item_selector(!hide_item_details);
+		this.toggle_component(!hide_item_details);
 
-		if (this.item_has_changed) {
+		if (item && current_item_changed) {
 			this.doctype = item.doctype;
 			this.item_meta = frappe.get_meta(this.doctype);
 			this.name = item.name;
 			this.item_row = item;
 			this.currency = this.events.get_frm().doc.currency;
 
-			this.current_item = { item_code: item.item_code, batch_no: item.batch_no, uom: item.uom };
+			this.current_item = item;
 
 			this.render_dom(item);
 			this.render_discount_dom(item);
 			this.render_form(item);
+			this.events.highlight_cart_item(item);
 			
 			//Set initial weight for weigh scale
 			window.old_weight = 0;			

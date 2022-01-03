@@ -28,41 +28,41 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 	make_invoice_fields_control() {
 		frappe.db.get_doc("POS Settings", undefined).then((doc) => {
 			const fields = doc.invoice_fields;
+			if (!fields.length) return;
+
 			this.$invoice_fields = this.$invoice_fields_section.find('.invoice-fields');
 			this.$invoice_fields.html('');
-			if (fields.length){
-				const frm = this.events.get_frm();
+			const frm = this.events.get_frm();
 
-				fields.forEach(df => {
-					this.$invoice_fields.append(
-						`<div class="invoice_detail_field ${df.fieldname}-field" data-fieldname="${df.fieldname}"></div>`
-					);
-					let df_events = {
-						onchange: function() {
-							frm.set_value(this.df.fieldname, this.value);
+			fields.forEach(df => {
+				this.$invoice_fields.append(
+					`<div class="invoice_detail_field ${df.fieldname}-field" data-fieldname="${df.fieldname}"></div>`
+				);
+				let df_events = {
+					onchange: function() {
+						frm.set_value(this.df.fieldname, this.get_value());
+					}
+				};
+				if (df.fieldtype == "Button") {
+					df_events = {
+						click: function() {
+							if (frm.script_manager.has_handlers(df.fieldname, frm.doc.doctype)) {
+								frm.script_manager.trigger(df.fieldname, frm.doc.doctype, frm.doc.docname);
+							}
 						}
 					};
-					if (df.fieldtype == "Button") {
-						df_events = {
-							click: function() {
-								if (frm.script_manager.has_handlers(df.fieldname, frm.doc.doctype)) {
-									frm.script_manager.trigger(df.fieldname, frm.doc.doctype, frm.doc.docname);
-								}
-							}
-						};
-					}
+				}
 
-					this[`${df.fieldname}_field`] = frappe.ui.form.make_control({
-						df: {
-							...df,
-							...df_events
-						},
-						parent: this.$invoice_fields.find(`.${df.fieldname}-field`),
-						render_input: true,
-					});
-					this[`${df.fieldname}_field`].set_value(frm.doc[df.fieldname]);
+				this[`${df.fieldname}_field`] = frappe.ui.form.make_control({
+					df: {
+						...df,
+						...df_events
+					},
+					parent: this.$invoice_fields.find(`.${df.fieldname}-field`),
+					render_input: true,
 				});
-			}
+				this[`${df.fieldname}_field`].set_value(frm.doc[df.fieldname]);
+			});
 			
 			//For raw printing buttons
 			this.$invoice_fields.append(
@@ -120,12 +120,12 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 				request_button.removeClass('btn-default').addClass('btn-primary');
 			} else {
 				request_button.removeClass('btn-primary').addClass('btn-default');
-			}
-		});
+      }
+    });
 
 		this.setup_listener_for_payments();
 
-		this.$payment_modes.on('click', '.shortcut', () => {
+		this.$payment_modes.on('click', '.shortcut', function() {
 			const value = $(this).attr('data-value');
 			me.selected_mode.set_value(value);
 		});
@@ -152,6 +152,7 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 			const is_cash_shortcuts_invisible = !this.$payment_modes.find('.cash-shortcuts').is(':visible');
 			this.attach_cash_shortcuts(frm.doc);
 			!is_cash_shortcuts_invisible && this.$payment_modes.find('.cash-shortcuts').css('display', 'grid');
+			this.render_payment_mode_dom();
 		});
 
 		frappe.ui.form.on('POS Invoice', 'loyalty_amount', (frm) => {
@@ -167,7 +168,6 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 				this[`${mode}_control`].set_value(default_mop.amount);
 			}
 		});
-		
 		//For raw printing buttons
 		this.$component.on('click', '.cash-drawer-btn', () => {
 			this.events.open_cash_drawer();

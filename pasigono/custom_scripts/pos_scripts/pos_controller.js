@@ -124,23 +124,23 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 					this.cart.toggle_numpad(minimize);
 				},
 
-				form_updated: async (cdt, cdn, fieldname, value) => {
-					const item_row = frappe.model.get_doc(cdt, cdn);
-					if (item_row && item_row[fieldname] != value) {
-
-						if (fieldname === 'qty' && flt(value) == 0) {
-							this.remove_item_from_cart();
-							return;
-						}
-
-						const { item_code, batch_no, uom } = this.item_details.current_item;
-						const event = {
-							field: fieldname,
+				form_updated: (item, field, value) => {
+					const item_row = frappe.model.get_doc(item.doctype, item.name);
+					if (item_row && item_row[field] != value) {
+						const args = {
+							field,
 							value,
-							item: { item_code, batch_no, uom }
-						}
-						return this.on_cart_update(event)
+							item: this.item_details.current_item
+						};
+						return this.on_cart_update(args);
 					}
+
+					return Promise.resolve();
+				},
+
+				highlight_cart_item: (item) => {
+					const cart_item = this.cart.get_cart_item(item);
+					this.cart.toggle_item_highlight(cart_item);
 				},
 
 				item_field_focused: (fieldname) => {
@@ -149,19 +149,18 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 				set_value_in_current_cart_item: (selector, value) => {
 					this.cart.update_selector_value_in_cart_item(selector, value, this.item_details.current_item);
 				},
-				clone_new_batch_item_in_frm: (batch_serial_map, current_item) => {
+				clone_new_batch_item_in_frm: (batch_serial_map, item) => {
 					// called if serial nos are 'auto_selected' and if those serial nos belongs to multiple batches
 					// for each unique batch new item row is added in the form & cart
 					Object.keys(batch_serial_map).forEach(batch => {
-						const { item_code, batch_no } = current_item;
-						const item_to_clone = this.frm.doc.items.find(i => i.item_code === item_code && i.batch_no === batch_no);
+						const item_to_clone = this.frm.doc.items.find(i => i.name == item.name);
 						const new_row = this.frm.add_child("items", { ...item_to_clone });
 						// update new serialno and batch
 						new_row.batch_no = batch;
 						new_row.serial_no = batch_serial_map[batch].join(`\n`);
 						new_row.qty = batch_serial_map[batch].length;
 						this.frm.doc.items.forEach(row => {
-							if (item_code === row.item_code) {
+							if (item.item_code === row.item_code) {
 								this.update_cart_html(row);
 							}
 						});
@@ -170,8 +169,8 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 				remove_item_from_cart: () => this.remove_item_from_cart(),
 				get_item_stock_map: () => this.item_stock_map,
 				close_item_details: () => {
-					this.item_details.toggle_item_details_section(undefined);
-					this.cart.prev_action = undefined;
+					this.item_details.toggle_item_details_section(null);
+					this.cart.prev_action = null;
 					this.cart.toggle_item_highlight();
 					//For weigh scale
 					if(window.enable_weigh_scale == 1){
@@ -192,7 +191,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 			.then(() => {
 				frappe.model.clear_doc(doctype, name);
 				this.update_cart_html(current_item, true);
-				this.item_details.toggle_item_details_section(undefined);
+				this.item_details.toggle_item_details_section(null);
 				frappe.dom.unfreeze();
 			})
 			.catch(e => console.log(e));
@@ -267,7 +266,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 									indicator: 'green',
 									message: __('POS invoice {0} created succesfully', [r.doc.name])
 								});
-							});
+						});
 					}
 					else{
 						//var stripe = new erpnext.PointOfSale.StripeTerminal();
