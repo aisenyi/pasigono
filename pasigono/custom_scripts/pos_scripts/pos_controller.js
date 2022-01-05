@@ -8,13 +8,13 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 	}
 	
 	init_stripe_terminal(){
-		//if(window.enable_stripe_terminal){
+		if(window.enable_stripe_terminal == 1){
 			this.stripe = new erpnext.PointOfSale.StripeTerminal();
 			frappe.dom.freeze();
 			//this.stripe.connect_to_stripe_terminal(this, true);	
 			this.stripe.assign_stripe_connection_token(this, true);
 			frappe.dom.unfreeze();
-		//}
+		}
 	}
 	
 	init_order_summary() {
@@ -80,7 +80,8 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 
 		frappe.db.get_doc("POS Profile", this.pos_profile).then((profile) => {
 			window.enable_raw_print = profile.enable_raw_printing;
-			window.enable_stripe_terminal = false;
+			window.enable_stripe_terminal = profile.enable_stripe_terminal;
+			window.stripe_mode_of_payment = profile.stripe_mode_of_payment;
 			//Select raw printer
 			if(window.enable_raw_print == 1){
 				var d = new frappe.ui.Dialog({
@@ -222,7 +223,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 				submit_invoice: () => {
 					//Support for stripe payments
 					var allowSubmit = 1;
-					if(frappe.sys_defaults.installed_apps.indexOf("stripe_terminal")>-1)
+					if(window.enable_stripe_terminal == 1)
 					{
 						
 						if(this.frm.doc.payments.length > 0)
@@ -230,7 +231,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 							for (var i=0;i<=this.frm.doc.payments.length;i++) {
 								if(this.frm.doc.payments[i] != undefined){
 									
-									 if(this.frm.doc.payments[i].mode_of_payment == "Stripe" && this.frm.doc.payments[i].base_amount != 0)
+									 if(this.frm.doc.payments[i].mode_of_payment == window.stripe_mode_of_payment && this.frm.doc.payments[i].base_amount != 0)
 									 {
 										if(this.frm.doc.payments[i].amount > 0)
 										{
@@ -273,6 +274,10 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 						//this.stripe.assign_stripe_connection_token(this,true);
 						this.stripe.collecting_payments(this, true);
 					}
+				},
+				
+				raw_print: () => {
+					this.raw_print(this.frm);
 				},
 				
 				open_cash_drawer: () => {
@@ -346,7 +351,9 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 		} catch (error) {
 			console.log(error);
 		} finally {
-			this.stripe.display_details(this);
+			if(window.enable_stripe_terminal == 1){
+				this.stripe.display_details(this);
+			}
 			frappe.dom.unfreeze();
 			return item_row;
 		}
@@ -488,7 +495,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 					ret.push(total + '\x0A');
 					
 					//If it's a stripe payment, add mandatory information at end o receipt
-					if(row.mode_of_payment=='Stripe' && row.base_amount > 0){
+					if(row.mode_of_payment==window.stripe_mode_of_payment && row.base_amount > 0){
 						stripe_info = [
 							'\x1B' + '\x61' + '\x31', // center align,
 							'\x0A',

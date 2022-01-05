@@ -12,7 +12,7 @@ def get_stripe_terminal_settings():
 	try:
 		return frappe.get_single("Stripe Terminal Settings")
 	except Exception as e:
-		frappe.log_error(frappe.get_traceback(), "stripe_terminal.stripe_terminal.api.get_stripe_terminal_settings.")
+		frappe.log_error(frappe.get_traceback(), "pasigono.pasigono.api.get_stripe_terminal_settings.")
 
 
 @frappe.whitelist(allow_guest=True)

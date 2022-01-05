@@ -38,10 +38,8 @@ frappe.pages['point-of-sale'].on_page_load = function(wrapper) {
 	});
 	
 	$(document).on('page-change', function(){
-		console.log("page changed");
 		var urlParts = window.location.pathname.split('/');
 		var page = urlParts.pop() || urlParts.pop();
-		console.log(page);
 		if(page == "point-of-sale" && !window.pos_loaded){
 			window.location.reload();
 		}
@@ -59,24 +57,10 @@ frappe.pages['point-of-sale'].refresh = function(wrapper) {
 	}
 	
 	window.onbeforeunload = function(){
-		console.log("Here");
 		if(window.enable_weigh_scale == 1){
 			window.mettlerWorker.terminate();
 			window.mettlerWorker = "undefined";
 		}
-		//if(window.serialPort.isOpen()){
-		  /*window.serialPort.closePort(
-			function(response){
-			  console.log(response);
-			  if(response.result === "ok"){
-				return null;
-			  }
-			  else{
-				return false;
-			  }
-			}
-		  );*/
-		//}
 		return null;
 	}
 };

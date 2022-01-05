@@ -10,7 +10,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		is_online = is_online;
 		show_loading_modal('Connecting to Stripe Terminal', 'Please Wait<br>Connecting to Stripe Terminal');
 		frappe.call({
-			method: "stripe_terminal.stripe_terminal.api.get_stripe_terminal_token",
+			method: "pasigono.pasigono.api.get_stripe_terminal_token",
 			freeze: true,
 			headers: {
 				"X-Requested-With": "XMLHttpRequest"
@@ -63,7 +63,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 
 	function connect_to_stripe_terminal(payment, is_online) {
 		frappe.call({
-			method: "stripe_terminal.stripe_terminal.api.get_stripe_terminal_settings",
+			method: "pasigono.pasigono.api.get_stripe_terminal_settings",
 			freeze: true,
 			headers: {
 				"X-Requested-With": "XMLHttpRequest"
@@ -162,13 +162,13 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		show_loading_modal('Refunding Payments', 'Please Wait<br>Refunding Payments');
 		var payments = payment.frm.doc.payments;
 		payments.forEach(function(row){
-			if(row.mode_of_payment == "Stripe"){
+			if(row.mode_of_payment == window.stripe_mode_of_payment){
 				frappe.call({
-					method: "stripe_terminal.stripe_terminal.api.refund_payment",
+					method: "pasigono.pasigono.api.refund_payment",
 					freeze: true,
 					args: {
 						"payment_intent_id": row.card_payment_intent,
-						"amount": row.base_amount * -1
+						"amount": row.base_amount.toFixed(2)*-100
 					},
 					headers: {
 						"X-Requested-With": "XMLHttpRequest"
@@ -191,7 +191,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 								});
 
 						} else {
-							payment.submit_invoice();
+							payment.payment.events.submit_invoice();
 						}
 					}
 				});
@@ -203,7 +203,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 	function create_payment(payment, is_online){
 		show_loading_modal('Collecting Payments', 'Please Wait<br>Collecting Payments');
 		frappe.call({
-			method: "stripe_terminal.stripe_terminal.api.payment_intent_creation",
+			method: "pasigono.pasigono.api.payment_intent_creation",
 			freeze: true,
 			args: {
 				"sales_invoice": payment.frm.doc
@@ -244,7 +244,6 @@ erpnext.PointOfSale.StripeTerminal = function(){
 								html += result.paymentIntent.amount/100 + ' through stripe.</div>';
 								confirm_dialog.fields_dict.show_dialog.$wrapper.html(html);
 								confirm_dialog.show();
-								
 							}
 						});
 					}
@@ -274,7 +273,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		canceling_dialog.show();
 		
 		frappe.call({
-			method: "stripe_terminal.stripe_terminal.api.cancel_payment_intent",
+			method: "pasigono.pasigono.api.cancel_payment_intent",
 			freeze: true,
 			args: {
 				"payment_intent_id": payment_intent.id,
@@ -295,7 +294,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		confirm_dialog.hide();
 		show_loading_modal('COllecting Payments', 'Please Wait<br>Collecting Payments');
 		frappe.call({
-			method: "stripe_terminal.stripe_terminal.api.capture_payment_intent",
+			method: "pasigono.pasigono.api.capture_payment_intent",
 			freeze: true,
 			args: {
 				"payment_intent_id": payment_intent.id,
@@ -308,7 +307,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				loading_dialog.hide();
 				var payments = payment.frm.doc.payments;
 				payments.forEach(function(row){
-					if(row.mode_of_payment == "Stripe"){
+					if(row.mode_of_payment == window.stripe_mode_of_payment){
 						var card_info = intent_result.message.charges.data[0].payment_method_details.card_present;
 						row.card_brand = card_info.brand;
 						row.card_last4 = card_info.last4;
@@ -329,8 +328,12 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					payment.frm.savesubmit()
 						.then((sales_invoice) => {
 							//For raw printing
+							if(window.open_cash_drawer_automatically == 1){
+								payment.payment.events.open_cash_drawer();
+							}
+							
 							if(window.automatically_print == 1){
-								payment.raw_print(payment.frm);							
+								payment.payment.events.raw_print(this.frm);							
 							}
 							
 							if (sales_invoice && sales_invoice.doc) {
@@ -340,7 +343,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 									message: __(`POS invoice ${sales_invoice.doc.name} created succesfully`)
 								});
 								frappe.call({
-									method: "stripe_terminal.stripe_terminal.api.update_payment_intent",
+									method: "pasigono.pasigono.api.update_payment_intent",
 									freeze: true,
 									args: {
 										"payment_intent_id": payment_intent.id,
@@ -359,17 +362,18 @@ erpnext.PointOfSale.StripeTerminal = function(){
 						});
 
 				} else {
-					payment.submit_invoice();
+					payment.payment.events.submit_invoice();
 				}
 			}
 		})
 	}
 	
-	function retry_stripe_terminal(me)
+	function retry_stripe_terminal(me, payment_object, is_online)
 	{
 		message_dilaog.hide();
+		me.collecting_payments(payment_object, is_online);
 		//assign_stripe_connection_token
-		me.assign_stripe_connection_token(payment_object, is_online);
+		//me.assign_stripe_connection_token(payment_object, is_online);
 	}
 	function change_payment_method()
 	{
@@ -392,6 +396,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 			primary_action_label: "Retry",
 			primary_action(values) {
 				retry_stripe_terminal(me);
+				message_dilaog.hide();
 			}
 		});
 		var html = "<p>" + message + "</p>";
@@ -413,8 +418,8 @@ erpnext.PointOfSale.StripeTerminal = function(){
 			primary_action_label: "Retry",
 			secondary_action_label: "Change Payment Mode",
 			primary_action(values) {
-				//retry_stripe_terminal(me);
-				me.collecting_payments(payment_object, is_online);
+				retry_stripe_terminal(me, payment_object, is_online);
+				//me.collecting_payments(payment_object, is_online);
 			},
 			secondary_action(values) {
 				change_payment_method();

@@ -127,7 +127,7 @@ doc_events = {
 #
 override_whitelisted_methods = {
 	#"frappe.desk.doctype.event.event.get_events": "stripe_terminal.event.get_events"
-	"erpnext.accounts.doctype.pos_invoice.pos_invoice.make_sales_return": "stripe_terminal.custom_scripts.controllers.sales_and_purchase_return.make_sales_return"
+	"erpnext.accounts.doctype.pos_invoice.pos_invoice.make_sales_return": "pasigono.custom_scripts.controllers.sales_and_purchase_return.make_sales_return"
 }
 #
 # each overriding function accepts a `data` argument;
