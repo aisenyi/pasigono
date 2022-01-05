@@ -57,16 +57,16 @@ erpnext.PointOfSale.PastOrderSummary = class extends erpnext.PointOfSale.PastOrd
 		this.wrapper.append(
 			`<section class="past-order-summary">
 				<div class="no-summary-placeholder">
-					Select an invoice to load summary data
+					${__('Select an invoice to load summary data')}
 				</div>
 				<div class="invoice-summary-wrapper">
 					<div class="abs-container">
 						<div class="upper-section"></div>
-						<div class="label">Items</div>
+						<div class="label">${__('Items')}</div>
 						<div class="items-container summary-container"></div>
-						<div class="label">Totals</div>
+						<div class="label">${__('Totals')}</div>
 						<div class="totals-container summary-container"></div>
-						<div class="label">Payments</div>
+						<div class="label">${__('Payments')}</div>
 						<div class="payments-container summary-container"></div>
 						<div class="summary-btns"></div>
 						<div class="raw-btns summary-container"></div>

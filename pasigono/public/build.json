@@ -1,7 +1,6 @@
 {
 	"js/point-of-sale.min.js": [
-		"public/js/stripe_v1.js",
-		"public/js/stripe_terminal.js",
+		"custom_scripts/stripe_terminal/stripe_terminal.js",
 		"pos_assets/pos_item_selector.js",
 		"pos_assets/pos_item_cart.js",
 		"pos_assets/pos_item_details.js",
