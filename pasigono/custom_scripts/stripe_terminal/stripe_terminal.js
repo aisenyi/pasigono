@@ -20,10 +20,8 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					connectiontoken = r.message.secret;
 					terminal = StripeTerminal.create({
 						onFetchConnectionToken: fetchConnectionToken,
-						onUnexpectedReaderDisconnect: unexpectedDisconnect,
-
+						onUnexpectedReaderDisconnect: unexpectedDisconnect
 					});
-
 					connect_to_stripe_terminal(payment, is_online);
 				} else {
 					show_error_dialog('Please configure the stripe settings.');
@@ -44,11 +42,8 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					label: '',
 					fieldname: 'show_dialog',
 					fieldtype: 'HTML'
-
 				},
-
 			],
-
 		});
 		var html = '<div style="min-height:200px;position: relative;text-align: center;padding-top: 75px;line-height: 25px;font-size: 15px;">';
 		html += '<div style="">' + message + '</div>';
@@ -77,9 +72,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 						isSimulated = true;
 						testCardNumber = r.message.card_number;
 						testCardtype = r.message.card_type;
-
 					}
-
 				}
 
 				var config = {
@@ -92,28 +85,48 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					} else if (discoverResult.discoveredReaders.length === 0) {
 						connecting_dialog.hide();
 						show_error_dialog('No Stripe readers found.');
-
 					} else {
-						// Just select the first reader here.
-						var selectedReader = discoverResult.discoveredReaders[0];
-						terminal.connectReader(selectedReader).then(function (connectResult) {
-							if (connectResult.error) {
-								connecting_dialog.hide();
-								show_error_dialog('Failed to connect.' + connectResult.error.message);
-
-							} else {
-								if (r.message.enable_test_mode == 1 && testCardNumber != "" && testCardtype != "") {
-									terminal.setSimulatorConfiguration({
-										'testCardNumber': testCardNumber,
-										'testPaymentMethod': testCardtype
-									});
+						var devices = '';
+						for(let x in discoverResult.discoveredReaders){
+							devices = devices + '\n' + discoverResult.discoveredReaders[x].label;
+						}
+						var d = new frappe.ui.Dialog({
+							'fields': [
+								{'fieldname': 'stripe_readers', 'fieldtype': 'Select', 'reqd': 1, 'label': 'Stripe Reader', 'options': devices }
+							],
+							primary_action: function(){
+								var selected = d.get_values().stripe_readers;
+								var selectedReader;
+								for(let x in discoverResult.discoveredReaders){
+									if(discoverResult.discoveredReaders[x].label == selected){
+										selectedReader = discoverResult.discoveredReaders[x];
+										d.hide();
+									}
 								}
-								loading_dialog.hide();
-								//connecting_dialog.hide();
-								//display_details(payment);
-								//collecting_payments(payment, is_online);
-							}
+								terminal.connectReader(selectedReader).then(function (connectResult) {
+									if (connectResult.error) {
+										connecting_dialog.hide();
+										show_error_dialog('Failed to connect.' + connectResult.error.message);
+
+									} else {
+										if (r.message.enable_test_mode == 1 && testCardNumber != "" && testCardtype != "") {
+											terminal.setSimulatorConfiguration({
+												'testCardNumber': testCardNumber,
+												'testPaymentMethod': testCardtype
+											});
+										}
+										loading_dialog.hide();
+									}
+								});
+							},
+							secondary_action: function(){
+								frappe.msgprint('Please disable Stripe Terminal in the POS Profile.');
+								d.hide();
+							},
+							secondary_action_label: 'Cancel',
+							title: 'Select a Stripe Terminal device'
 						});
+						d.show();
 					}
 				});
 			}
@@ -389,9 +402,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					label: '',
 					fieldname: 'show_dialog',
 					fieldtype: 'HTML'
-
 				},
-
 			],
 			primary_action_label: "Retry",
 			primary_action(values) {
