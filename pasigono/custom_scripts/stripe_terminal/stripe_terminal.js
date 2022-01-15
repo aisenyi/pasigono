@@ -163,7 +163,28 @@ erpnext.PointOfSale.StripeTerminal = function(){
 
 	this.collecting_payments = function(payment, is_online) {
 		if(payment.frm.doc.is_return == 1){
-			refund_payment(payment, is_online);
+			confirm_dialog = new frappe.ui.Dialog({
+				title: 'Confirm, refund through Stripe',
+				fields: [{
+						label: '',
+						fieldname: 'show_dialog',
+						fieldtype: 'HTML'
+					},
+				],
+				primary_action_label: "Confirm",
+				primary_action(values) {
+					confirm_dialog.hide();
+					refund_payment(payment, is_online);
+				},
+				secondary_action_label: "Cancel",
+				secondary_action(values) {
+					confirm_dialog.hide();
+				}
+			});
+			var html = '<div style="text-align: center;">Please confirm. Refund of ' + payment.frm.doc.currency.toUpperCase() + ' ';
+			html += payment.frm.doc.grand_total * -1 + ' through stripe.</div>';
+			confirm_dialog.fields_dict.show_dialog.$wrapper.html(html);
+			confirm_dialog.show();
 		}
 		else{
 			create_payment(payment, is_online);
