@@ -63,14 +63,16 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 				});
 				this[`${df.fieldname}_field`].set_value(frm.doc[df.fieldname]);
 			});
-			
-			//For raw printing buttons
-			this.$invoice_fields.append(
+		});
+		
+		//For raw printing buttons
+		if(window.enable_raw_print == 1){
+			this.$invoice_fields_section.find('.invoice-fields').append(
 				`<div style="position: absolute; bottom: 0; width: 100%; margin-bottom: 10px;" class="summary-btn btn btn-default cash-drawer-btn">
 					Open Cash Drawer
 				</div>`
 			);
-		});
+		}
 	}
 	
 	bind_events() {
