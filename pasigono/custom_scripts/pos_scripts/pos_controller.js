@@ -84,24 +84,50 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 			window.stripe_mode_of_payment = profile.stripe_mode_of_payment;
 			//Select raw printer
 			if(window.enable_raw_print == 1){
-				var d = new frappe.ui.Dialog({
-					'fields': [
-						{'fieldname': 'printer', 'fieldtype': 'Select', 'reqd': 1, 'label': "Printer"}
-					],
-					primary_action: function(){
-						window.raw_printer = d.get_values().printer;
-						d.hide();
-					},
-					secondary_action: function(){
-						d.hide();
-					},
-					secondary_action_label: "Cancel",
-					'title': 'Select printer for Raw Printing'
+				frappe.db.get_doc('QZ Tray Settings', undefined).then((qz_doc) => {
+					if(qz_doc.trusted_certificate != '' && qz_doc.private_certificate != ''){
+						frappe.ui.form.qz_init().then(function(){
+							///// QZ Certificate ///
+							qz.security.setCertificatePromise(function(resolve, reject) {
+								resolve(qz_doc.trusted_certificate);
+							});
+							qz.security.setSignaturePromise(function(toSign) {
+								return function(resolve, reject) {
+									try {
+										var pk = KEYUTIL.getKey(qz_doc.private_certificate);
+										//var sig = new KJUR.crypto.Signature({"alg": "SHA512withRSA"});  // Use "SHA1withRSA" for QZ Tray 2.0 and older
+										var sig = new KJUR.crypto.Signature({"alg": "SHA1withRSA"});  // Use "SHA1withRSA" for QZ Tray 2.0 and older
+										sig.init(pk); 
+										sig.updateString(toSign);
+										var hex = sig.sign();
+										resolve(stob64(hextorstr(hex)));
+									} catch (err) {
+										console.error(err);
+										reject(err);
+									}
+								};
+							});	
+						});
+					}
+					var d = new frappe.ui.Dialog({
+						'fields': [
+							{'fieldname': 'printer', 'fieldtype': 'Select', 'reqd': 1, 'label': "Printer"}
+						],
+						primary_action: function(){
+							window.raw_printer = d.get_values().printer;
+							d.hide();
+						},
+						secondary_action: function(){
+							d.hide();
+						},
+						secondary_action_label: "Cancel",
+						'title': 'Select printer for Raw Printing'
+					});
+					frappe.ui.form.qz_get_printer_list().then((data) => {
+						d.set_df_property('printer', 'options', data);
+						d.show();
+					});	
 				});
-				frappe.ui.form.qz_get_printer_list().then((data) => {
-					d.set_df_property('printer', 'options', data);
-				});
-				d.show();
 			}
 			window.automatically_print = profile.automatically_print;
 			window.open_cash_drawer_automatically = profile.open_cash_drawer_automatically;
