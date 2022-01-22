@@ -137,11 +137,11 @@ erpnext.PointOfSale.StripeTerminal = function(){
 	this.display_details = async function(payment){
 		var frm = payment.frm.doc;
 		var items = [];
-		var taxes = Math.round(payment.frm.doc.total_taxes_and_charges.toFixed(2)*100);
-		var total = Math.round(payment.frm.doc.grand_total.toFixed(2)*100);
+		var taxes = Math.round(payment.frm.doc.total_taxes_and_charges*100);
+		var total = Math.round(payment.frm.doc.grand_total*100);
 		var currency = payment.frm.doc.currency;
 		frm.items.forEach(function(row){
-			var amount = row.amount.toFixed(2)*100;
+			var amount = row.amount*100;
 			var item = {
 				"description": row.item_name,
 				"quantity": Math.round(row.qty),
@@ -159,6 +159,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				currency: currency
 			}
 		});
+		console.log({"items": items, "taxes": taxes, "total": total});
 	}
 
 	this.collecting_payments = function(payment, is_online) {
