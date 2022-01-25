@@ -159,7 +159,6 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				currency: currency
 			}
 		});
-		console.log({"items": items, "taxes": taxes, "total": total});
 	}
 
 	this.collecting_payments = function(payment, is_online) {
