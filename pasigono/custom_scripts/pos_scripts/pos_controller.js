@@ -85,7 +85,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 			//Select raw printer
 			if(window.enable_raw_print == 1){
 				frappe.db.get_doc('QZ Tray Settings', undefined).then((qz_doc) => {
-					if(qz_doc.trusted_certificate != '' && qz_doc.private_certificate != ''){
+					if(qz_doc.trusted_certificate != null && qz_doc.trusted_certificate != "" && qz_doc.private_certificate != "" && qz_doc.private_certificate != null){
 						frappe.ui.form.qz_init().then(function(){
 							///// QZ Certificate ///
 							qz.security.setCertificatePromise(function(resolve, reject) {
