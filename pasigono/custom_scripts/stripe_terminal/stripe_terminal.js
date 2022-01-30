@@ -9,6 +9,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		payment_object = payment;
 		is_online = is_online;
 		show_loading_modal('Connecting to Stripe Terminal', 'Please Wait<br>Connecting to Stripe Terminal');
+		frappe.dom.freeze();
 		frappe.call({
 			method: "pasigono.pasigono.api.get_stripe_terminal_token",
 			freeze: true,
@@ -16,6 +17,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				"X-Requested-With": "XMLHttpRequest"
 			},
 			callback: function (r) {
+				frappe.dom.unfreeze();
 				if (r.message) {
 					connectiontoken = r.message.secret;
 					terminal = StripeTerminal.create({
@@ -57,6 +59,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 	}
 
 	function connect_to_stripe_terminal(payment, is_online) {
+		frappe.dom.freeze();
 		frappe.call({
 			method: "pasigono.pasigono.api.get_stripe_terminal_settings",
 			freeze: true,
@@ -64,6 +67,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				"X-Requested-With": "XMLHttpRequest"
 			},
 			callback: function (r) {
+				frappe.dom.unfreeze();
 				var isSimulated = false;
 				var testCardNumber = "";
 				var testCardtype = "";
@@ -194,6 +198,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 	
 	function refund_payment(payment, is_online){
 		show_loading_modal('Refunding Payments', 'Please Wait<br>Refunding Payments');
+		frappe.dom.freeze();
 		var payments = payment.frm.doc.payments;
 		payments.forEach(function(row){
 			if(row.mode_of_payment == window.stripe_mode_of_payment){
@@ -209,6 +214,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 					},
 					callback: function(result){
 						loading_dialog.hide();
+						frappe.dom.unfreeze();
 						if (is_online) {
 							payment.frm.savesubmit()
 								.then((sales_invoice) => {
@@ -236,6 +242,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 	
 	function create_payment(payment, is_online){
 		show_loading_modal('Collecting Payments', 'Please Wait<br>Collecting Payments');
+		frappe.dom.freeze();
 		frappe.call({
 			method: "pasigono.pasigono.api.payment_intent_creation",
 			freeze: true,
@@ -305,7 +312,6 @@ erpnext.PointOfSale.StripeTerminal = function(){
 		html += '</div>';
 		canceling_dialog.fields_dict.show_dialog.$wrapper.html(html);
 		canceling_dialog.show();
-		
 		frappe.call({
 			method: "pasigono.pasigono.api.cancel_payment_intent",
 			freeze: true,
@@ -317,6 +323,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				"X-Requested-With": "XMLHttpRequest"
 			},
 			callback: function (intent_result) {
+				frappe.dom.unfreeze();
 				canceling_dialog.hide();
 				frappe.msgprint("Stripe payment cancelled.");
 			}
@@ -338,6 +345,7 @@ erpnext.PointOfSale.StripeTerminal = function(){
 				"X-Requested-With": "XMLHttpRequest"
 			},
 			callback: function (intent_result) {
+				frappe.dom.unfreeze();
 				loading_dialog.hide();
 				var payments = payment.frm.doc.payments;
 				payments.forEach(function(row){
