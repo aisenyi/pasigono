@@ -74,7 +74,7 @@ To use the scale in the Point of Sale:
 2. Click on the item in the cart, which will show the "Item Details."
 3. Place the product on the scale. The quantity will update with the weight outputted from the scale.
 
-![Using the Scale](https://drive.google.com/uc?id=1QdQY5Ko8mReR9UKj8BuOfbXYQzTKLpk7)
+![Using the Scale](/pasigono/public/images/gif2.gif)
 
 #### Limitations and Compatibility
 
