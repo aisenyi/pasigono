@@ -28,7 +28,7 @@ From the directory of your bench, run the following commands:
 
 These options will be added to the bottom of the POS Profile:
 
-![POS Options](/pasigono/pasigono/public/images/1.PNG)
+![POS Options](/pasigono/public/images/1.PNG)
 
 The POS Profile can be found at:
 
