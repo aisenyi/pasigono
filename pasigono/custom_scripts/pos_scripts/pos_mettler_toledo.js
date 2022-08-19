@@ -28,6 +28,7 @@ onmessage = function(message){
 	}
     else if(message.data.command == "start")
     {
+		console.log("Start called");
 		weightLoop = true;
         startWeight();
     }
@@ -58,6 +59,7 @@ async function connectPort(){
 
 async function startWeight(){
 	if(portConnected){
+		console.log("Port connected");
 		try{
 			var strWeight = "";
 			await sendCommand("W");
@@ -91,6 +93,7 @@ async function startWeight(){
 								strWeight.concat(response)
 							}
 							var newWeight = parseFloat(strWeight);
+							console.log({"new weight": newWeight});
 							if(newWeight != weight && !isNaN(newWeight)){
 								weight = newWeight;
 								postMessage({

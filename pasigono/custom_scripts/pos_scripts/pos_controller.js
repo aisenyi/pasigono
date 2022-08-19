@@ -214,7 +214,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 		frappe.dom.freeze();
 		const { doctype, name, current_item } = this.item_details;
 
-		frappe.model.set_value(doctype, name, 'qty', 0)
+		return frappe.model.set_value(doctype, name, 'qty', 0)
 			.then(() => {
 				frappe.model.clear_doc(doctype, name);
 				this.update_cart_html(current_item, true);
@@ -240,9 +240,9 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 				toggle_other_sections: (show) => {
 					if (show) {
 						this.item_details.$component.is(':visible') ? this.item_details.$component.css('display', 'none') : '';
-						this.item_selector.$component.css('display', 'none');
+						this.item_selector.toggle_component(false);
 					} else {
-						this.item_selector.$component.css('display', 'flex');
+						this.item_selector.toggle_component(true);
 					}
 				},
 
@@ -370,7 +370,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 				if (this.item_details.$component.is(':visible'))
 					this.edit_item_details_of(item_row);
 
-				if (this.check_serial_batch_selection_needed(item_row))
+				if (this.check_serial_batch_selection_needed(item_row) && !this.item_details.$component.is(':visible'))
 					this.edit_item_details_of(item_row);
 			}
 

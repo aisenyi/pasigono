@@ -61,7 +61,7 @@ erpnext.PointOfSale.ItemDetails = class extends erpnext.PointOfSale.ItemDetails 
 		}
 	}
 	
-	toggle_item_details_section(item) {
+	async toggle_item_details_section(item) {
 		window.is_item_details_open = true;
 		const current_item_changed = !this.compare_with_current_item(item);
 
@@ -70,6 +70,12 @@ erpnext.PointOfSale.ItemDetails = class extends erpnext.PointOfSale.ItemDetails 
 
 		this.events.toggle_item_selector(!hide_item_details);
 		this.toggle_component(!hide_item_details);
+		
+		if ((!hide_item_details && current_item_changed) || hide_item_details) {
+			// if item details is being closed OR if item details is opened but item is changed
+			// in both cases, if the current item is a serialized item, then validate and remove the item
+			await this.validate_serial_batch_item();
+        } 
 
 		if (item && current_item_changed) {
 			this.doctype = item.doctype;
@@ -88,7 +94,6 @@ erpnext.PointOfSale.ItemDetails = class extends erpnext.PointOfSale.ItemDetails 
 			//Set initial weight for weigh scale
 			window.old_weight = 0;			
 		} else {
-			this.validate_serial_batch_item();
 			this.current_item = {};
 		}
 		if(window.enable_weigh_scale == 1){
