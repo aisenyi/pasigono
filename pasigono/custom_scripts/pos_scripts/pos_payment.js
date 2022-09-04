@@ -114,7 +114,7 @@ erpnext.PointOfSale.Payment = class extends erpnext.PointOfSale.Payment {
 				me.auto_set_remaining_amount();
 			}
 		});
-
+		
 		frappe.ui.form.on('POS Invoice', 'contact_mobile', (frm) => {
 			const contact = frm.doc.contact_mobile;
 			const request_button = $(this.request_for_payment_field.$input[0]);

@@ -77,8 +77,73 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 		frappe.db.get_value('Stock Settings', undefined, 'allow_negative_stock').then(({ message }) => {
 			this.allow_negative_stock = flt(message.allow_negative_stock) || false;
 		});
-
-		frappe.db.get_doc("POS Profile", this.pos_profile).then((profile) => {
+		
+		frappe.call({
+			method: "erpnext.selling.page.point_of_sale.point_of_sale.get_pos_profile_data",
+			args: { "pos_profile": this.pos_profile },
+			callback: (res) => {
+				const profile = res.message;
+				window.enable_raw_print = profile.enable_raw_printing;
+				window.enable_stripe_terminal = profile.enable_stripe_terminal;
+				window.stripe_mode_of_payment = profile.stripe_mode_of_payment;
+				//Select raw printer
+				if(window.enable_raw_print == 1){
+					frappe.db.get_doc('QZ Tray Settings', undefined).then((qz_doc) => {
+						if(qz_doc.trusted_certificate != null && qz_doc.trusted_certificate != "" && qz_doc.private_certificate != "" && qz_doc.private_certificate != null){
+							frappe.ui.form.qz_init().then(function(){
+								///// QZ Certificate ///
+								qz.security.setCertificatePromise(function(resolve, reject) {
+									resolve(qz_doc.trusted_certificate);
+								});
+								qz.security.setSignaturePromise(function(toSign) {
+									return function(resolve, reject) {
+										try {
+											var pk = KEYUTIL.getKey(qz_doc.private_certificate);
+											//var sig = new KJUR.crypto.Signature({"alg": "SHA512withRSA"});  // Use "SHA1withRSA" for QZ Tray 2.0 and older
+											var sig = new KJUR.crypto.Signature({"alg": "SHA1withRSA"});  // Use "SHA1withRSA" for QZ Tray 2.0 and older
+											sig.init(pk); 
+											sig.updateString(toSign);
+											var hex = sig.sign();
+											resolve(stob64(hextorstr(hex)));
+										} catch (err) {
+											console.error(err);
+											reject(err);
+										}
+									};
+								});	
+							});
+						}
+						var d = new frappe.ui.Dialog({
+							'fields': [
+								{'fieldname': 'printer', 'fieldtype': 'Select', 'reqd': 1, 'label': "Printer"}
+							],
+							primary_action: function(){
+								window.raw_printer = d.get_values().printer;
+								d.hide();
+							},
+							secondary_action: function(){
+								d.hide();
+							},
+							secondary_action_label: "Cancel",
+							'title': 'Select printer for Raw Printing'
+						});
+						frappe.ui.form.qz_get_printer_list().then((data) => {
+							d.set_df_property('printer', 'options', data);
+							d.show();
+						});	
+					});
+				}
+				window.automatically_print = profile.automatically_print;
+				window.open_cash_drawer_automatically = profile.open_cash_drawer_automatically;
+				//For weigh scale
+				window.enable_weigh_scale = profile.enable_weigh_scale;
+				Object.assign(this.settings, profile);
+				this.settings.customer_groups = profile.customer_groups.map(group => group.name);
+				this.make_app();
+			}
+		});
+		
+		/*frappe.db.get_doc("POS Profile", this.pos_profile).then((profile) => {
 			window.enable_raw_print = profile.enable_raw_printing;
 			window.enable_stripe_terminal = profile.enable_stripe_terminal;
 			window.stripe_mode_of_payment = profile.stripe_mode_of_payment;
@@ -136,7 +201,7 @@ erpnext.PointOfSale.Controller = class extends erpnext.PointOfSale.Controller{
 			Object.assign(this.settings, profile);
 			this.settings.customer_groups = profile.customer_groups.map(group => group.customer_group);
 			this.make_app();
-		});
+		});*/
 	}
 	
 	init_item_details() {

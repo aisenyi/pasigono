@@ -55,7 +55,8 @@ erpnext.PointOfSale.ItemSelector = class {
 		const doc = this.events.get_frm().doc;
 		const price_list = (doc && doc.selling_price_list) || this.price_list;
 		let { item_group, pos_profile } = this;
-
+		console.log({'this': this});
+		console.log({"item_group": item_group, "pos_profile": pos_profile});
 		!item_group && (item_group = this.parent_item_group);
 
 		return frappe.call({

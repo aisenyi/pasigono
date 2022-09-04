@@ -1,0 +1,13 @@
+import "../../custom_scripts/stripe_terminal/stripe_terminal.js";
+import "../../pos_assets/pos_item_selector.js";
+import "../../pos_assets/pos_item_cart.js";
+import "../../pos_assets/pos_item_details.js";
+import "../../custom_scripts/pos_scripts/pos_item_details.js";
+import "../../pos_assets/pos_number_pad.js";
+import "../../pos_assets/pos_payment.js";
+import "../../custom_scripts/pos_scripts/pos_payment.js";
+import "../../pos_assets/pos_past_order_list.js";
+import "../../pos_assets/pos_past_order_summary.js";
+import "../../custom_scripts/pos_scripts/pos_past_order_summary.js";
+import "../../pos_assets/pos_controller.js";
+import "../../custom_scripts/pos_scripts/pos_controller.js";
